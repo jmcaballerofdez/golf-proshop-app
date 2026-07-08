@@ -125,10 +125,10 @@ function BotonPrimario({ children, onClick, icon: Icon = Plus, type = "button", 
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-medium shadow-sm hover:opacity-90 active:scale-[0.99] transition disabled:opacity-40 disabled:cursor-not-allowed"
-      style={{ background: PRIMARY }}
+      className="inline-flex items-center gap-2 px-4.5 py-2.5 rounded-xl text-white text-sm font-semibold shadow-[0_2px_8px_rgba(34,89,61,0.28)] hover:shadow-[0_4px_16px_rgba(34,89,61,0.36)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+      style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, ${PRIMARY_DARK} 100%)` }}
     >
-      {Icon && <Icon size={16} strokeWidth={2} />}
+      {Icon && <Icon size={16} strokeWidth={2.25} />}
       {children}
     </button>
   );
@@ -137,9 +137,9 @@ function BotonSecundario({ children, onClick, icon: Icon }) {
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border border-[#D8E2DC] text-[#1B2621] bg-white hover:bg-[#F0F4F2] transition"
+      className="inline-flex items-center gap-2 px-4.5 py-2.5 rounded-xl text-sm font-semibold border border-[#DCE5DF] text-[#1B2621] bg-white hover:bg-[#F0F4F2] hover:border-[#C7D4CD] shadow-sm transition-all duration-200"
     >
-      {Icon && <Icon size={16} strokeWidth={2} />}
+      {Icon && <Icon size={16} strokeWidth={2.25} />}
       {children}
     </button>
   );
@@ -149,10 +149,12 @@ function PillFiltro({ activo, onClick, children }) {
     <button
       onClick={onClick}
       className={cx(
-        "px-3.5 py-1.5 rounded-lg text-sm font-medium border transition",
-        activo ? "text-white border-transparent" : "text-[#374842] border-[#D8E2DC] bg-white hover:bg-[#F0F4F2]"
+        "px-4 py-1.5 rounded-full text-sm font-semibold border transition-all duration-200",
+        activo
+          ? "text-white border-transparent shadow-[0_2px_10px_rgba(34,89,61,0.3)]"
+          : "text-[#4A5850] border-[#E2E9E4] bg-white hover:border-[#C7D4CD] hover:bg-[#F0F4F2]"
       )}
-      style={activo ? { background: PRIMARY } : {}}
+      style={activo ? { background: `linear-gradient(135deg, ${PRIMARY} 0%, ${PRIMARY_DARK} 100%)` } : {}}
     >
       {children}
     </button>
@@ -194,23 +196,41 @@ function TarjetaStat({ titulo, valor, subtitulo, Icon, tintClass = "bg-[#22593D]
   );
 }
 
+// ─── Avatar de iniciales (para filas de tabla y tarjetas) ─────────────
+const AVATAR_TONOS = [
+  { bg: "#22593D1A", fg: "#22593D" }, { bg: "#8c1c1c1A", fg: "#8c1c1c" },
+  { bg: "#C6A2531A", fg: "#8A6A2E" }, { bg: "#2E6DA41A", fg: "#2E6DA4" },
+  { bg: "#7c3aed1A", fg: "#7c3aed" },
+];
+function Avatar({ nombre = "" }) {
+  const iniciales = nombre.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || "").join("") || "?";
+  let hash = 0; for (let i = 0; i < nombre.length; i++) hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
+  const tono = AVATAR_TONOS[Math.abs(hash) % AVATAR_TONOS.length];
+  return (
+    <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: tono.bg, color: tono.fg }}>
+      {iniciales}
+    </div>
+  );
+}
+
 // ─── Modal genérico ──────────────────────────────────────────────────
 function Modal({ open, onClose, title, children, wide }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0C2A1C]/50 backdrop-blur-[2px] p-4" onClick={onClose}>
       <div
-        className={cx("bg-white rounded-2xl shadow-xl w-full max-h-[90vh] overflow-y-auto", wide ? "max-w-2xl" : "max-w-md")}
+        className={cx("bg-white rounded-2xl shadow-[0_24px_64px_rgba(12,42,28,0.28)] w-full max-h-[90vh] overflow-y-auto animate-[modalIn_0.18s_ease-out]", wide ? "max-w-2xl" : "max-w-md")}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E9EFEC]">
-          <h3 className="font-semibold text-lg" style={{ color: PRIMARY }}>{title}</h3>
-          <button onClick={onClose} className="text-[#8A9A93] hover:text-[#1B2621] rounded-md p-1 hover:bg-[#E7EFEB] transition">
+          <h3 className="font-semibold text-lg tracking-tight" style={{ color: PRIMARY }}>{title}</h3>
+          <button onClick={onClose} className="text-[#8A9A93] hover:text-[#1B2621] rounded-lg p-1.5 hover:bg-[#E7EFEB] transition-colors">
             <X size={18} />
           </button>
         </div>
         <div className="p-6">{children}</div>
       </div>
+      <style>{`@keyframes modalIn{from{opacity:0;transform:scale(.97) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}`}</style>
     </div>
   );
 }
@@ -222,7 +242,7 @@ function Field({ label, children }) {
     </label>
   );
 }
-const inputCls = "w-full border border-[#D8E2DC] rounded-lg px-3 py-2 text-sm text-[#1B2621] focus:outline-none focus:ring-2 focus:ring-[#22593D]/15 focus:border-[#22593D] transition";
+const inputCls = "w-full border border-[#DCE5DF] rounded-xl px-3.5 py-2.5 text-sm text-[#1B2621] bg-white focus:outline-none focus:ring-4 focus:ring-[#22593D]/10 focus:border-[#22593D] transition-all duration-200";
 
 // ─── Rutas de Firestore ancladas al club (multi-cliente) ─────────────
 function coleccionClub(nombre) { return collection(db, "clubes", CLUB_ID, nombre); }
@@ -557,13 +577,13 @@ function Productos({ productos, categorias }) {
 
       <Tarjeta className="overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-[#F0F4F2] text-[#66796F] text-left">
-            <tr>
-              <th className="px-5 py-3.5 font-medium">Producto</th>
-              <th className="px-5 py-3.5 font-medium">Categoría</th>
-              <th className="px-5 py-3.5 font-medium">Precio (IVA incl.)</th>
-              <th className="px-5 py-3.5 font-medium">Stock</th>
-              <th className="px-5 py-3.5 font-medium"></th>
+          <thead className="text-left">
+            <tr className="border-b border-[#E9EFEC]">
+              <th className="px-5 py-3.5 font-semibold text-[10.5px] uppercase tracking-wider text-[#8A9A93]">Producto</th>
+              <th className="px-5 py-3.5 font-semibold text-[10.5px] uppercase tracking-wider text-[#8A9A93]">Categoría</th>
+              <th className="px-5 py-3.5 font-semibold text-[10.5px] uppercase tracking-wider text-[#8A9A93]">Precio (IVA incl.)</th>
+              <th className="px-5 py-3.5 font-semibold text-[10.5px] uppercase tracking-wider text-[#8A9A93]">Stock</th>
+              <th className="px-5 py-3.5"></th>
             </tr>
           </thead>
           <tbody>
@@ -571,14 +591,19 @@ function Productos({ productos, categorias }) {
               const conIVA = (p.precioVentaSinIVA || 0) * (1 + (p.porcentajeIVA || 0) / 100);
               const bajo = (p.stockActual ?? 0) <= (p.stockMinimo ?? 0);
               return (
-                <tr key={p.id} className="border-t border-[#E9EFEC] hover:bg-[#F0F4F2]/60">
-                  <td className="px-5 py-3.5 text-[#1B2621]">{p.nombre}</td>
-                  <td className="px-5 py-3.5 text-[#66796F]">{p.categoria}</td>
-                  <td className="px-5 py-3.5 text-[#1B2621]">{euros(conIVA)}</td>
-                  <td className="px-5 py-3.5"><Badge tone={bajo ? "ambar" : "neutral"}>{p.stockActual ?? 0} {p.unidad}</Badge></td>
-                  <td className="px-5 py-3.5 text-right">
-                    <button onClick={() => setModal(p)} className="p-1.5 text-[#8A9A93] hover:text-[#1B2621] rounded-md hover:bg-[#E7EFEB]"><Pencil size={15} /></button>
-                    <button onClick={() => confirm(`¿Eliminar "${p.nombre}"?`) && borrarDoc("proshop_productos", p.id)} className="p-1.5 text-[#8A9A93] hover:text-[#C32222] rounded-md hover:bg-[#E7EFEB]"><Trash2 size={15} /></button>
+                <tr key={p.id} className="border-b border-[#F0F4F2] last:border-0 hover:bg-[#F8FAF9] transition-colors">
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar nombre={p.nombre} />
+                      <span className="text-[#1B2621] font-medium">{p.nombre}</span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-3 text-[#66796F]">{p.categoria}</td>
+                  <td className="px-5 py-3 text-[#1B2621] font-medium">{euros(conIVA)}</td>
+                  <td className="px-5 py-3"><Badge tone={bajo ? "ambar" : "neutral"}>{p.stockActual ?? 0} {p.unidad}</Badge></td>
+                  <td className="px-5 py-3 text-right">
+                    <button onClick={() => setModal(p)} className="p-1.5 text-[#8A9A93] hover:text-[#1B2621] rounded-lg hover:bg-[#E7EFEB] transition-colors"><Pencil size={15} /></button>
+                    <button onClick={() => confirm(`¿Eliminar "${p.nombre}"?`) && borrarDoc("proshop_productos", p.id)} className="p-1.5 text-[#8A9A93] hover:text-[#C32222] rounded-lg hover:bg-[#FBEAEA] transition-colors"><Trash2 size={15} /></button>
                   </td>
                 </tr>
               );
@@ -659,10 +684,16 @@ function TPV({ productos, empleados, siguienteTicket }) {
           <input placeholder="Buscar producto…" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className={cx(inputCls, "mb-4")} />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {disponibles.map((p) => (
-              <Tarjeta key={p.id} className="p-4 cursor-pointer" onClick={() => añadir(p)}>
-                <p className="text-sm font-medium text-[#1B2621] line-clamp-2">{p.nombre}</p>
-                <p className="text-xs text-[#8A9A93] mb-1">{p.categoria}</p>
-                <p className="text-sm font-semibold" style={{ color: PRIMARY }}>{euros((p.precioVentaSinIVA || 0) * (1 + (p.porcentajeIVA || 0) / 100))}</p>
+              <Tarjeta key={p.id} className="p-4 cursor-pointer group" onClick={() => añadir(p)}>
+                <div className="flex items-start justify-between mb-2">
+                  <Avatar nombre={p.nombre} />
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: PRIMARY }}>
+                    <Plus size={13} color="white" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-[#1B2621] line-clamp-2 leading-snug">{p.nombre}</p>
+                <p className="text-xs text-[#8A9A93] mb-1.5">{p.categoria}</p>
+                <p className="text-base font-bold" style={{ color: PRIMARY }}>{euros((p.precioVentaSinIVA || 0) * (1 + (p.porcentajeIVA || 0) / 100))}</p>
               </Tarjeta>
             ))}
             {disponibles.length === 0 && <p className="text-sm text-[#8A9A93] col-span-full py-6 text-center">Sin resultados.</p>}
@@ -670,20 +701,23 @@ function TPV({ productos, empleados, siguienteTicket }) {
         </div>
 
         <Tarjeta className="p-5 self-start">
-          <p className="font-medium text-[#1B2621] mb-3">Ticket</p>
-          <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${PRIMARY}15`, color: PRIMARY }}><Receipt size={15} /></div>
+            <p className="font-semibold text-[#1B2621]">Ticket</p>
+          </div>
+          <div className="space-y-2.5 mb-4 max-h-64 overflow-y-auto">
             {lineas.map((l) => (
-              <div key={l.producto.id} className="flex items-center justify-between text-sm gap-2">
+              <div key={l.producto.id} className="flex items-center justify-between text-sm gap-2 pb-2.5 border-b border-[#F0F4F2] last:border-0 last:pb-0">
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-[#1B2621]">{l.producto.nombre}</p>
+                  <p className="truncate text-[#1B2621] font-medium">{l.producto.nombre}</p>
                   <p className="text-xs text-[#8A9A93]">{euros(l.subtotal)}</p>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => cambiarCantidad(l.producto.id, -1)} className="p-1 rounded-md hover:bg-[#E7EFEB]"><Minus size={13} /></button>
-                  <span className="w-5 text-center text-[#1B2621]">{l.cantidad}</span>
-                  <button onClick={() => cambiarCantidad(l.producto.id, 1)} className="p-1 rounded-md hover:bg-[#E7EFEB]"><Plus size={13} /></button>
-                  <button onClick={() => quitar(l.producto.id)} className="p-1 rounded-md hover:bg-[#FBEAEA] text-[#8A9A93] hover:text-[#C32222]"><Trash size={13} /></button>
+                <div className="flex items-center gap-0.5 bg-[#F0F4F2] rounded-lg p-0.5">
+                  <button onClick={() => cambiarCantidad(l.producto.id, -1)} className="p-1 rounded-md hover:bg-white transition-colors"><Minus size={13} /></button>
+                  <span className="w-5 text-center text-[#1B2621] font-medium text-xs">{l.cantidad}</span>
+                  <button onClick={() => cambiarCantidad(l.producto.id, 1)} className="p-1 rounded-md hover:bg-white transition-colors"><Plus size={13} /></button>
                 </div>
+                <button onClick={() => quitar(l.producto.id)} className="p-1 rounded-md hover:bg-[#FBEAEA] text-[#8A9A93] hover:text-[#C32222] transition-colors"><Trash size={13} /></button>
               </div>
             ))}
             {lineas.length === 0 && <p className="text-sm text-[#8A9A93]">Añade productos al ticket.</p>}
@@ -700,10 +734,10 @@ function TPV({ productos, empleados, siguienteTicket }) {
             </select>
           </Field>
 
-          <div className="border-t border-[#E9EFEC] pt-3 mt-3 text-sm space-y-1">
-            <div className="flex justify-between text-[#66796F]"><span>Base imponible</span><span>{euros(baseImponibleTotal)}</span></div>
-            <div className="flex justify-between text-[#66796F]"><span>IVA</span><span>{euros(cuotaIVATotal)}</span></div>
-            <div className="flex justify-between text-base font-semibold pt-1" style={{ color: PRIMARY }}><span>Total</span><span>{euros(total)}</span></div>
+          <div className="rounded-xl p-3.5 mt-3 space-y-1" style={{ background: "#F8FAF9" }}>
+            <div className="flex justify-between text-xs text-[#66796F]"><span>Base imponible</span><span>{euros(baseImponibleTotal)}</span></div>
+            <div className="flex justify-between text-xs text-[#66796F]"><span>IVA</span><span>{euros(cuotaIVATotal)}</span></div>
+            <div className="flex justify-between text-xl font-bold pt-1.5 mt-1 border-t border-[#E2E9E4]" style={{ color: PRIMARY, fontFamily: "'Playfair Display', serif" }}><span>Total</span><span>{euros(total)}</span></div>
           </div>
 
           <div className="mt-4">
@@ -725,27 +759,32 @@ function HistorialVentas({ ventas }) {
       <Cabecera titulo="Historial de ventas" subtitulo="Todos los tickets emitidos, con IVA desglosado." />
       <Tarjeta className="overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-[#F0F4F2] text-[#66796F] text-left">
-            <tr>
-              <th className="px-5 py-3.5 font-medium">Ticket</th>
-              <th className="px-5 py-3.5 font-medium">Fecha</th>
-              <th className="px-5 py-3.5 font-medium">Empleado</th>
-              <th className="px-5 py-3.5 font-medium">Pago</th>
-              <th className="px-5 py-3.5 font-medium">Base</th>
-              <th className="px-5 py-3.5 font-medium">IVA</th>
-              <th className="px-5 py-3.5 font-medium">Total</th>
+          <thead className="text-left">
+            <tr className="border-b border-[#E9EFEC]">
+              <th className="px-5 py-3.5 font-semibold text-[10.5px] uppercase tracking-wider text-[#8A9A93]">Ticket</th>
+              <th className="px-5 py-3.5 font-semibold text-[10.5px] uppercase tracking-wider text-[#8A9A93]">Fecha</th>
+              <th className="px-5 py-3.5 font-semibold text-[10.5px] uppercase tracking-wider text-[#8A9A93]">Empleado</th>
+              <th className="px-5 py-3.5 font-semibold text-[10.5px] uppercase tracking-wider text-[#8A9A93]">Pago</th>
+              <th className="px-5 py-3.5 font-semibold text-[10.5px] uppercase tracking-wider text-[#8A9A93]">Base</th>
+              <th className="px-5 py-3.5 font-semibold text-[10.5px] uppercase tracking-wider text-[#8A9A93]">IVA</th>
+              <th className="px-5 py-3.5 font-semibold text-[10.5px] uppercase tracking-wider text-[#8A9A93]">Total</th>
             </tr>
           </thead>
           <tbody>
             {ventas.datos.map((v) => (
-              <tr key={v.id} className="border-t border-[#E9EFEC] hover:bg-[#F0F4F2]/60 cursor-pointer" onClick={() => setAbierta(v)}>
-                <td className="px-5 py-3.5 text-[#1B2621]">#{v.numeroTicket}</td>
-                <td className="px-5 py-3.5 text-[#66796F]">{fechaCorta(v.creadoEn)} · {horaCorta(v.creadoEn)}</td>
-                <td className="px-5 py-3.5 text-[#374842]">{v.empleadoNombre}</td>
-                <td className="px-5 py-3.5"><Badge>{v.metodoPago}</Badge></td>
-                <td className="px-5 py-3.5 text-[#66796F]">{euros(v.baseImponibleTotal)}</td>
-                <td className="px-5 py-3.5 text-[#66796F]">{euros(v.cuotaIVATotal)}</td>
-                <td className="px-5 py-3.5 font-medium" style={{ color: PRIMARY }}>{euros(v.total)}</td>
+              <tr key={v.id} className="border-b border-[#F0F4F2] last:border-0 hover:bg-[#F8FAF9] cursor-pointer transition-colors" onClick={() => setAbierta(v)}>
+                <td className="px-5 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${GOLD}22`, color: "#8A6A2E" }}><Receipt size={14} /></div>
+                    <span className="text-[#1B2621] font-medium">#{v.numeroTicket}</span>
+                  </div>
+                </td>
+                <td className="px-5 py-3 text-[#66796F]">{fechaCorta(v.creadoEn)} · {horaCorta(v.creadoEn)}</td>
+                <td className="px-5 py-3 text-[#374842]">{v.empleadoNombre}</td>
+                <td className="px-5 py-3"><Badge>{v.metodoPago}</Badge></td>
+                <td className="px-5 py-3 text-[#66796F]">{euros(v.baseImponibleTotal)}</td>
+                <td className="px-5 py-3 text-[#66796F]">{euros(v.cuotaIVATotal)}</td>
+                <td className="px-5 py-3 font-semibold" style={{ color: PRIMARY }}>{euros(v.total)}</td>
               </tr>
             ))}
             {ventas.datos.length === 0 && <tr><td colSpan={7} className="px-5 py-8 text-center text-[#8A9A93]">Sin ventas registradas todavía.</td></tr>}
@@ -833,16 +872,21 @@ function Ofertas({ ofertas, productos }) {
       </Cabecera>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {ofertas.datos.map((o) => (
-          <Tarjeta key={o.id} className="p-6">
-            <p className="font-medium text-[#1B2621]">{nombreProducto(o.productoId)}</p>
-            <p className="text-sm text-[#66796F] mb-2">
-              {o.tipoDescuento === "porcentaje" ? `-${o.valor}%` : `-${euros(o.valor)}`}
-            </p>
-            <p className="text-xs text-[#8A9A93] mb-3">{o.fechaInicio || "—"} → {o.fechaFin || "—"}</p>
-            <div className="flex items-center gap-2">
-              <Badge tone={o.activa ? "verde" : "neutral"}>{o.activa ? "Activa" : "Inactiva"}</Badge>
-              <button onClick={() => setModal(o)} className="p-1.5 text-[#8A9A93] hover:text-[#1B2621] rounded-md hover:bg-[#E7EFEB]"><Pencil size={15} /></button>
-              <button onClick={() => confirm("¿Eliminar esta oferta?") && borrarDoc("proshop_ofertas", o.id)} className="p-1.5 text-[#8A9A93] hover:text-[#C32222] rounded-md hover:bg-[#E7EFEB]"><Trash2 size={15} /></button>
+          <Tarjeta key={o.id} className="overflow-hidden">
+            <div className="h-[3px]" style={{ background: o.activa ? PRIMARY : "#D8E2DC" }} />
+            <div className="p-6">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <p className="font-semibold text-[#1B2621]">{nombreProducto(o.productoId)}</p>
+                <Badge tone={o.activa ? "verde" : "neutral"}>{o.activa ? "Activa" : "Inactiva"}</Badge>
+              </div>
+              <p className="text-2xl font-bold mt-2" style={{ color: PRIMARY, fontFamily: "'Playfair Display', serif" }}>
+                {o.tipoDescuento === "porcentaje" ? `-${o.valor}%` : `-${euros(o.valor)}`}
+              </p>
+              <p className="text-xs text-[#8A9A93] mt-2 mb-4">{o.fechaInicio || "—"} → {o.fechaFin || "—"}</p>
+              <div className="flex items-center gap-1.5 pt-3 border-t border-[#F0F4F2]">
+                <button onClick={() => setModal(o)} className="p-1.5 text-[#8A9A93] hover:text-[#1B2621] rounded-lg hover:bg-[#E7EFEB] transition-colors"><Pencil size={15} /></button>
+                <button onClick={() => confirm("¿Eliminar esta oferta?") && borrarDoc("proshop_ofertas", o.id)} className="p-1.5 text-[#8A9A93] hover:text-[#C32222] rounded-lg hover:bg-[#FBEAEA] transition-colors"><Trash2 size={15} /></button>
+              </div>
             </div>
           </Tarjeta>
         ))}
@@ -892,11 +936,16 @@ function Equipo({ empleados }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {empleados.datos.map((e) => (
           <Tarjeta key={e.id} className="p-6">
-            <p className="font-medium text-[#1B2621]">{e.nombre}</p>
-            <p className="text-xs text-[#8A9A93] mb-3">{e.rol}</p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3.5 mb-4">
+              <Avatar nombre={e.nombre} />
+              <div className="min-w-0">
+                <p className="font-semibold text-[#1B2621] truncate">{e.nombre}</p>
+                <p className="text-xs text-[#8A9A93] truncate">{e.rol}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 pt-3 border-t border-[#F0F4F2]">
               <Badge tone={e.pin ? "verde" : "neutral"}>{e.pin ? "PIN configurado" : "Sin PIN"}</Badge>
-              <button onClick={() => setModal(e)} className="p-1.5 text-[#8A9A93] hover:text-[#1B2621] rounded-md hover:bg-[#E7EFEB]"><Pencil size={15} /></button>
+              <button onClick={() => setModal(e)} className="p-1.5 text-[#8A9A93] hover:text-[#1B2621] rounded-lg hover:bg-[#E7EFEB] transition-colors ml-auto"><Pencil size={15} /></button>
             </div>
           </Tarjeta>
         ))}
