@@ -1,5 +1,9 @@
-@import "tailwindcss";
+/* El @import de la fuente DEBE ir antes que el de Tailwind:
+   las reglas @import de CSS tienen que preceder a todo lo demás,
+   o el navegador/compilador las descarta (era el aviso amarillo
+   que salía en cada npm run build). */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
 
 body {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
