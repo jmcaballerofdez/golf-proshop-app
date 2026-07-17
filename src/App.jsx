@@ -9,6 +9,7 @@ import {
   LayoutDashboard, Clock, Package, ShoppingCart, Tag, Users,
   Plus, Pencil, Trash2, X, Menu, LogIn, LogOut, KeyRound,
   Minus, Trash, Receipt, AlertTriangle,
+  GraduationCap, Wrench, Wallet, Home,
 } from "lucide-react";
 
 // ─── Firebase Config ───────────────────────────────────────────────
@@ -301,6 +302,42 @@ const NAV_GROUPS = [
   { label: "Sistema", items: [{ id: "equipo", label: "Equipo", Icon: Users }] },
 ];
 
+// ─── Selector de apps Golf B (fila de iconos, siempre visible) ────────
+const GOLFB_APPS = [
+  { id: "academia", nombre: "Academia", color: "#B03A2E", url: "https://jmcaballerofdez.github.io/golf-academia-app/", Icon: GraduationCap },
+  { id: "mantenimiento", nombre: "Mantenimiento", color: "#1A5C2A", url: "https://jmcaballerofdez.github.io/golf-mantenimiento-app/", Icon: Wrench },
+  { id: "proshop", nombre: "Proshop", color: "#2E6DA4", url: "https://jmcaballerofdez.github.io/golf-proshop-app/", Icon: ShoppingCart },
+  { id: "finanzas", nombre: "Finanzas", color: "#8E969E", url: "https://jmcaballerofdez.github.io/golf-finanzas-app/", Icon: Wallet },
+  { id: "master", nombre: "Golf B Máster", color: "#C9A227", url: "https://jmcaballerofdez.github.io/golf-master-app/", Icon: Home },
+];
+function AppSwitcher({ actual }) {
+  return (
+    <div className="px-6 pb-4">
+      <p className="text-[10px] text-white/30 uppercase font-semibold mb-2.5 tracking-wider">Cambiar de app</p>
+      <div className="flex items-center gap-2">
+        {GOLFB_APPS.map((app) => {
+          const esActual = app.id === actual;
+          return (
+            <a
+              key={app.id}
+              href={esActual ? undefined : app.url}
+              title={app.nombre}
+              className={cx(
+                "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0",
+                esActual ? "ring-2 ring-white/70 cursor-default" : "opacity-60 hover:opacity-100 hover:scale-110"
+              )}
+              style={{ background: `${app.color}` }}
+              onClick={(e) => { if (esActual) e.preventDefault(); }}
+            >
+              <app.Icon size={15} color="white" strokeWidth={2} />
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Sidebar({ vista, setVista, abierto, setAbierto }) {
   return (
     <>
@@ -346,6 +383,7 @@ function Sidebar({ vista, setVista, abierto, setAbierto }) {
             </div>
           ))}
         </nav>
+        <AppSwitcher actual="proshop" />
         <div className="px-6 py-4 border-t border-white/[0.08] mt-auto">
           <p className="text-[10px] text-white/40 uppercase font-semibold mb-0.5 tracking-wider">Club</p>
           <p className="font-medium text-sm text-white/85 truncate">Golf Ciudad Real C.D.</p>
