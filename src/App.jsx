@@ -13,7 +13,7 @@ import {
   Plus, Pencil, Trash2, X, Menu, LogIn, LogOut, KeyRound,
   Minus, Trash, Receipt, AlertTriangle,
   GraduationCap, Wrench, Wallet, Home, Banknote, Lock, Unlock,
-  Mail, UserPlus, Shield, Loader2,
+  Mail, UserPlus, Shield, Loader2, Settings2, AlertOctagon,
 } from "lucide-react";
 
 // ─── Firebase Config ───────────────────────────────────────────────
@@ -339,6 +339,8 @@ function docUsuario(uid) { return doc(db, "Usuarios", uid); }
 function useAuthProshop() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  // null = todavia no comprobado o el club no tiene el campo (no bloquea nada, retrocompatible)
+  const [modulosActivos, setModulosActivos] = useState(null);
   const [cargandoAuth, setCargandoAuth] = useState(true);
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -351,14 +353,22 @@ function useAuthProshop() {
           console.error("Error al cargar rol:", err);
           setUserRole("pendiente");
         }
+        try {
+          const clubSnap = await getDoc(doc(db, "clubes", CLUB_ID));
+          setModulosActivos(clubSnap.exists() && clubSnap.data().modulosActivos ? clubSnap.data().modulosActivos : null);
+        } catch (err) {
+          console.error("Error al cargar modulos activos del club:", err);
+          setModulosActivos(null);
+        }
       } else {
         setUserRole(null);
+        setModulosActivos(null);
       }
       setCargandoAuth(false);
     });
     return unsub;
   }, []);
-  return { currentUser, userRole, cargandoAuth };
+  return { currentUser, userRole, modulosActivos, cargandoAuth };
 }
 
 // ─── Semillas iniciales (empleados y categorías) ─────────────────────
@@ -486,6 +496,22 @@ function AccesoPendiente({ email }) {
   );
 }
 
+// Se muestra cuando el login y el rol son correctos, pero el club
+// no tiene el módulo Proshop activo (superadmin decide esto desde
+// el panel "Clubes" de Máster).
+function ModuloDesactivado({ email }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: SIDEBAR_DARK }}>
+      <div className="w-full max-w-sm text-center">
+        <Lock size={30} className="mx-auto mb-4" style={{ color: GOLD }} />
+        <p className="text-white font-semibold mb-1.5">Proshop no está activo para tu club</p>
+        <p className="text-white/60 text-sm mb-6">La cuenta <span className="text-white/85">{email}</span> ha entrado correctamente, pero este módulo no está contratado actualmente. Contacta con el administrador del club.</p>
+        <button onClick={() => signOut(auth)} className="text-sm font-medium px-5 py-2.5 rounded-xl" style={{ background: GOLD, color: SIDEBAR_DARK }}>Cerrar sesión</button>
+      </div>
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════
 // SIDEBAR
 // ════════════════════════════════════════════════════════════════════
@@ -501,7 +527,10 @@ const NAV_GROUPS = [
     { id: "productos", label: "Productos", Icon: Package },
     { id: "ofertas", label: "Ofertas", Icon: Tag },
   ]},
-  { label: "Sistema", items: [{ id: "equipo", label: "Equipo", Icon: Users }] },
+  { label: "Sistema", items: [
+    { id: "equipo", label: "Equipo", Icon: Users },
+    { id: "ajustes", label: "Ajustes", Icon: Settings2 },
+  ]},
 ];
 
 // ─── Selector de apps Golf B (fila de iconos, siempre visible) ────────
@@ -1652,10 +1681,140 @@ function Equipo({ empleados }) {
 }
 
 // ════════════════════════════════════════════════════════════════════
+// AJUSTES — borrado seguro de datos de prueba/ficticios
+// Igual que la herramienta ya existente en Finanzas: permite vaciar
+// ventas y cajas diarias de prueba antes de empezar a trabajar con
+// datos reales, sin tocar productos, ofertas ni empleados.
+// ════════════════════════════════════════════════════════════════════
+function AjustesProshopView({ ventas, caja }) {
+  const [seleccion, setSeleccion] = useState({ ventas: true, caja: true });
+  const [confirmando, setConfirmando] = useState(false);
+  const [textoConfirmacion, setTextoConfirmacion] = useState("");
+  const [borrando, setBorrando] = useState(false);
+  const [hecho, setHecho] = useState(false);
+  const [progreso, setProgreso] = useState(null);
+
+  const etiquetas = { ventas: "Ventas (historial TPV)", caja: "Cajas diarias" };
+  const coleccionesPorClave = {
+    ventas: { ruta: "proshop_ventas", items: ventas.datos },
+    caja: { ruta: "proshop_caja", items: caja.datos },
+  };
+  const conteos = { ventas: ventas.datos.length, caja: caja.datos.length };
+  const totalSeleccionado = Object.entries(seleccion).reduce((s, [k, v]) => s + (v ? conteos[k] : 0), 0);
+  const nadaSeleccionado = Object.values(seleccion).every((v) => !v);
+
+  async function borrarSeleccion() {
+    setBorrando(true); setHecho(false);
+    const total = totalSeleccionado;
+    let hechos = 0;
+    setProgreso({ hechos: 0, total, seccion: "" });
+    try {
+      for (const [clave, activo] of Object.entries(seleccion)) {
+        if (!activo) continue;
+        const { ruta, items } = coleccionesPorClave[clave];
+        const validos = items.filter((it) => typeof it.id === "string" && it.id.length > 0);
+        const TAMANO_LOTE = 40;
+        for (let i = 0; i < validos.length; i += TAMANO_LOTE) {
+          const lote = validos.slice(i, i + TAMANO_LOTE);
+          await Promise.all(lote.map((it) => borrarDoc(ruta, it.id)));
+          hechos += lote.length;
+          setProgreso({ hechos, total, seccion: etiquetas[clave] || clave });
+        }
+      }
+      setHecho(true); setConfirmando(false); setTextoConfirmacion("");
+    } catch (e) {
+      console.warn("Error borrando datos:", e);
+      alert(`Ha habido un problema borrando los datos (se habían borrado ${hechos} de ${total}). Revisa la consola.`);
+    }
+    setBorrando(false);
+  }
+
+  return (
+    <div>
+      <Cabecera titulo="Ajustes" subtitulo="Borrado seguro de datos de prueba." />
+      <Tarjeta className="p-6" style={{ border: "1px solid #E2685C55" }}>
+        <div className="flex items-center gap-2.5 mb-1.5">
+          <AlertOctagon size={19} color="#E2685C" />
+          <p className="font-bold" style={{ color: "#E2685C" }}>Borrar datos de prueba</p>
+        </div>
+        <p className="text-sm text-[#5B6B7E] mb-4">
+          Vacía ventas y/o cajas diarias ficticias para empezar a registrar datos reales.
+          No afecta a productos, ofertas ni empleados.
+        </p>
+        <div className="space-y-2 mb-4">
+          {Object.entries(etiquetas).map(([clave, label]) => (
+            <label key={clave} className="flex items-center gap-2.5 text-sm text-[#1C3550]">
+              <input
+                type="checkbox"
+                checked={seleccion[clave]}
+                onChange={(e) => setSeleccion({ ...seleccion, [clave]: e.target.checked })}
+              />
+              {label} <span className="text-[#5B6B7E]">({conteos[clave]} registros)</span>
+            </label>
+          ))}
+        </div>
+
+        {!confirmando && !hecho && (
+          <BotonPrimario
+            onClick={() => setConfirmando(true)}
+            disabled={nadaSeleccionado || totalSeleccionado === 0}
+            style={{ background: "#E2685C" }}
+          >
+            Borrar {totalSeleccionado} registros seleccionados
+          </BotonPrimario>
+        )}
+
+        {confirmando && !hecho && (
+          <div className="mt-2 p-4 rounded-xl" style={{ background: "#FFF5F4", border: "1px solid #E2685C33" }}>
+            <p className="text-sm text-[#1C3550] mb-2.5">
+              Esta acción <b>no se puede deshacer</b>. Escribe <code>BORRAR</code> para confirmar.
+            </p>
+            <input
+              type="text"
+              value={textoConfirmacion}
+              onChange={(e) => setTextoConfirmacion(e.target.value)}
+              className={inputCls}
+              style={{ maxWidth: 220, marginBottom: 12 }}
+            />
+            {borrando && progreso && (
+              <p className="text-xs text-[#5B6B7E] mb-2">
+                {progreso.seccion} — {progreso.hechos} de {progreso.total} registros borrados
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={borrarSeleccion}
+                disabled={textoConfirmacion !== "BORRAR" || borrando}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
+                style={{ background: "#E2685C" }}
+              >
+                {borrando ? "Borrando…" : "Confirmar borrado definitivo"}
+              </button>
+              <button
+                onClick={() => { setConfirmando(false); setTextoConfirmacion(""); }}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-[#5B6B7E] hover:bg-[#EDF2F8]"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {hecho && (
+          <p className="text-sm font-medium" style={{ color: "#2E7D4F" }}>
+            Hecho — se han borrado {progreso ? progreso.hechos : 0} registros. Ya puedes empezar a registrar datos reales.
+          </p>
+        )}
+      </Tarjeta>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
 // APP PRINCIPAL
 // ════════════════════════════════════════════════════════════════════
 export default function App() {
-  const { currentUser, userRole, cargandoAuth } = useAuthProshop();
+  const { currentUser, userRole, modulosActivos, cargandoAuth } = useAuthProshop();
   const [vista, setVista] = useState("panel");
   const [sidebarAbierto, setSidebarAbierto] = useState(false);
 
@@ -1677,11 +1836,15 @@ export default function App() {
   const titulos = {
     panel: "Panel", ventas: "Ventas (TPV)", caja: "Caja diaria", historial: "Historial de ventas",
     fichajes: "Fichajes", productos: "Productos", ofertas: "Ofertas", equipo: "Equipo",
+    ajustes: "Ajustes",
   };
 
   if (cargandoAuth) return <CargandoAuth />;
   if (!currentUser) return <Login />;
   if (!ROLES_PERMITIDOS_PROSHOP.includes(userRole)) return <AccesoPendiente email={currentUser.email} />;
+  if (userRole !== "superadmin" && modulosActivos && modulosActivos.proshop === false) {
+    return <ModuloDesactivado email={currentUser.email} />;
+  }
 
   return (
     <div className="min-h-screen flex" style={{ background: BACKGROUND }}>
@@ -1708,6 +1871,7 @@ export default function App() {
           {vista === "productos" && <Productos productos={productos} categorias={categorias} />}
           {vista === "ofertas" && <Ofertas ofertas={ofertas} productos={productos} />}
           {vista === "equipo" && <Equipo empleados={empleados} />}
+          {vista === "ajustes" && <AjustesProshopView ventas={ventas} caja={caja} />}
         </main>
       </div>
     </div>

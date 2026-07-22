@@ -1,28 +1,102 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Ficha del club: nombre, si está activo, módulos comprados.
-    // Solo lectura desde la app (la gestión de altas/bajas se hace desde
-    // la consola de Firebase o desde una futura herramienta de administración).
-    match /clubes/{clubId} {
-      allow read: if request.auth != null && request.auth.token.clubId == clubId;
-      allow write: if false;
-
-      // Todo lo demás (mant_equipo, mant_tareas, mant_partes, mant_aplicaciones,
-      // mant_maquinaria, mant_fichajes, y cualquier colección futura) vive aquí
-      // dentro. Solo una sesión autenticada con el clubId correcto en su token
-      // puede leer o escribir — un club nunca puede ver los datos de otro,
-      // aunque conozca o adivine el nombre de otro club.
-      match /{coleccion}/{docId} {
-        allow read, write: if request.auth != null && request.auth.token.clubId == clubId;
-      }
+    function isSuperAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/Usuarios/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.role == 'superadmin';
     }
-
-    // Cualquier otra ruta no contemplada explícitamente: denegada por defecto.
-    match /{document=**} {
-      allow read, write: if false;
+    // — Usuarios: cada quien solo puede leer su propio documento —
+    // y crear su PROPIO documento la primera vez (auto-vinculación por email).
+    // Nadie puede modificarlo ni borrarlo después, ni asignarse superadmin
+    // salvo la cuenta de email autorizada.
+    match /Usuarios/{uid} {
+      allow read: if request.auth != null
+        && (request.auth.uid == uid || isSuperAdmin());
+      allow create: if request.auth != null && (
+        // 1) Auto-vinculación: cada uno crea su PROPIO documento
+        (request.auth.uid == uid
+          && (
+            (request.resource.data.role in ['admin', 'superadmin']
+              && request.auth.token.email == 'jmcaballerofdez@gmail.com')
+            ||
+            (request.resource.data.role in ['alumno', 'profesor', 'tutor'])
+          ))
+        ||
+        // 2) El superadmin puede crear accesos de alumnos y tutores
+        //    (botón "🔑 Acceso" de Academia)
+        (isSuperAdmin()
+          && request.resource.data.role in ['alumno', 'tutor'])
+        ||
+        // 3) Un profesor o admin también puede crear accesos de
+        //    alumnos y tutores desde su panel
+        (exists(/databases/$(database)/documents/Usuarios/$(request.auth.uid))
+          && get(/databases/$(database)/documents/Usuarios/$(request.auth.uid)).data.role in ['profesor', 'admin']
+          && request.resource.data.role in ['alumno', 'tutor'])
+      );
+      allow update: if false;
+      allow delete: if isSuperAdmin();
+    }
+    // — Mi Facturación (personal de Jose, fuera del club) —
+    // Solo su propia cuenta puede leer o escribir aquí. Ninguna otra
+    // app ni usuario del club tiene acceso a esta colección: son sus
+    // facturas y presupuestos personales (jugador profesional, profesor
+    // de golf, comercio ShopGolf), separados de la contabilidad de
+    // Golf Ciudad Real C.D.
+    match /facturacion_personal/{document=**} {
+      allow read, write: if request.auth != null
+        && request.auth.token.email == "jmcaballerofdez@gmail.com";
+    }
+    // — Colecciones de Academia — requieren sesión iniciada —
+    // (antes estaban en "if true", abiertas a cualquiera sin login;
+    // esto incluía datos de alumnos menores de edad y sus tutores).
+    match /academia/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /academia_clases/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /academia_clases_email/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /academia_emails/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /academia_informes/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /notificaciones/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /registros_pendientes/{docId} {
+      // El alta de alumno nuevo se envía SIN haber iniciado sesión
+      // (a propósito — es el formulario público de "Solicita tu alta").
+      // Pero leer, modificar o borrar solicitudes ya enviadas sí
+      // requiere sesión (para que nadie pueda leer las de otros).
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+    match /mensajes/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /cf_manager/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    // Ficha del club: nombre, si está activo, módulos comprados.
+    // Lectura: superadmin (cualquier club) o una sesión con ese clubId
+    // en su token. Escritura: solo superadmin — es quien decide qué
+    // módulos tiene contratados cada club desde el panel "Clubes" de
+    // Máster.
+    match /clubes/{clubId} {
+      allow read: if isSuperAdmin() || (request.auth != null && request.auth.token.clubId == clubId);
+      allow write: if isSuperAdmin();
+      // Todo lo demás (mant_equipo, mant_tareas, mant_partes, mant_aplicaciones,
+      // mant_maquinaria, mant_fichajes, finanzas_*, proshop_*, y cualquier
+      // colección futura) vive aquí dentro. Un superadmin puede leer/escribir
+      // cualquier club; una sesión normal solo el suyo (por clubId en el token).
+      match /{coleccion}/{docId} {
+        allow read, write: if isSuperAdmin() || (request.auth != null && request.auth.token.clubId == clubId);
+      }
     }
   }
 }
