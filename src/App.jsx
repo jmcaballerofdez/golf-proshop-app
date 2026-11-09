@@ -13,7 +13,7 @@ import {
   Plus, Pencil, Trash2, X, Menu, LogIn, LogOut, KeyRound,
   Minus, Trash, Receipt, AlertTriangle,
   GraduationCap, Wrench, Wallet, Home, Banknote, Lock, Unlock,
-  Mail, UserPlus, Shield, Loader2, Settings2, AlertOctagon,
+  Mail, UserPlus, Shield, Loader2, Settings2, AlertOctagon, ClipboardCheck,
 } from "lucide-react";
 
 // ─── Firebase Config ───────────────────────────────────────────────
@@ -537,6 +537,7 @@ const NAV_GROUPS = [
 const GOLFB_APPS = [
   { id: "academia", nombre: "Academia", color: "#B03A2E", url: "https://academia.golfb.es/", Icon: GraduationCap },
   { id: "mantenimiento", nombre: "Mantenimiento", color: "#1A5C2A", url: "https://mantenimiento.golfb.es/", Icon: Wrench },
+  { id: "recepcion", nombre: "Recepción", color: "#7C2A35", url: "https://recepciongcr.golfb.es/", Icon: ClipboardCheck },
   { id: "proshop", nombre: "Proshop", color: "#2E6DA4", url: "https://proshop.golfb.es/", Icon: ShoppingCart },
   { id: "finanzas", nombre: "Finanzas", color: "#8E969E", url: "https://finanzas.golfb.es/", Icon: Wallet },
   { id: "master", nombre: "Golf B Máster", color: "#C9A227", url: "https://golfb.es/", Icon: Home },
@@ -552,6 +553,8 @@ function AppSwitcher({ actual }) {
             <a
               key={app.id}
               href={esActual ? undefined : app.url}
+              target={esActual ? undefined : "_blank"}
+              rel="noopener noreferrer"
               title={app.nombre}
               className={cx(
                 "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0",
