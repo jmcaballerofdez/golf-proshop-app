@@ -1673,6 +1673,7 @@ function Equipo({ empleados }) {
               <Badge tone={e.email ? "verde" : "ambar"}>{e.email ? "Con acceso" : "Sin acceso"}</Badge>
               <button onClick={() => setModalAcceso(e)} title="Gestionar acceso" className="p-1.5 text-[#5B6B7E] hover:text-[#1C3550] rounded-lg hover:bg-[#EDF2F8] transition-colors ml-auto"><Mail size={15} /></button>
               <button onClick={() => setModal(e)} title="Editar" className="p-1.5 text-[#5B6B7E] hover:text-[#1C3550] rounded-lg hover:bg-[#EDF2F8] transition-colors"><Pencil size={15} /></button>
+              <button onClick={() => confirm(`¿Eliminar a "${e.nombre}" del equipo? Sus ventas y fichajes anteriores se conservan.`) && borrarDoc("proshop_empleados", e.id)} title="Eliminar" className="p-1.5 text-[#5B6B7E] hover:text-[#E2685C] rounded-lg hover:bg-[#E2685C29] transition-colors"><Trash2 size={15} /></button>
             </div>
           </Tarjeta>
         ))}
